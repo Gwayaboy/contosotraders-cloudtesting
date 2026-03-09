@@ -765,65 +765,16 @@ resource uistgacc 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   properties: {
     allowBlobPublicAccess: true
   }
-  // blob service
+  // blob service with static website enabled natively (avoids ACI DeploymentScript quota issues)
   resource uistgacc_blobsvc 'blobServices' = {
     name: 'default'
-  }
-}
-
-resource uistgacc_mi 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' = {
-  name: 'DeploymentScript'
-  location: resourceLocation
-  tags: resourceTags
-}
-
-resource uistgacc_roledefinition 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
-  scope: subscription()
-  // This is the Storage Account Contributor role, which is the minimum role permission we can give. 
-  // See https://docs.microsoft.com/en-us/azure/role-based-access-control/built-in-roles#:~:text=17d1049b-9a84-46fb-8f53-869881c3d3ab
-  name: '17d1049b-9a84-46fb-8f53-869881c3d3ab'
-}
-
-// This requires the service principal to be in 'owner' role or a custom role with 'Microsoft.Authorization/roleAssignments/write' permissions.
-// Details: https://learn.microsoft.com/en-us/answers/questions/287573/authorization-failed-when-when-writing-a-roleassig.html
-resource roleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: uistgacc
-  name: guid(resourceGroup().id, uistgacc_mi.id, uistgacc_roledefinition.id)
-  properties: {
-    roleDefinitionId: uistgacc_roledefinition.id
-    principalId: uistgacc_mi.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-resource deploymentScript 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
-  name: 'DeploymentScript'
-  location: resourceLocation
-  kind: 'AzurePowerShell'
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${uistgacc_mi.id}': {}
+    properties: {
+      staticWebsite: {
+        enabled: true
+        indexDocument: 'index.html'
+        errorDocument404Path: 'index.html'
+      }
     }
-  }
-  dependsOn: [
-    // we need to ensure we wait for the role assignment to be deployed before trying to access the storage account
-    roleAssignment
-  ]
-  properties: {
-    azPowerShellVersion: '3.0'
-    scriptContent: loadTextContent('./scripts/enable-static-website.ps1')
-    retentionInterval: 'PT4H'
-    environmentVariables: [
-      {
-        name: 'ResourceGroupName'
-        value: resourceGroup().name
-      }
-      {
-        name: 'StorageAccountName'
-        value: uistgacc.name
-      }
-    ]
   }
 }
 
@@ -840,59 +791,16 @@ resource ui2stgacc 'Microsoft.Storage/storageAccounts@2023-01-01' = {
     allowBlobPublicAccess: true
   }
 
-  // blob service
+  // blob service with static website enabled natively (avoids ACI DeploymentScript quota issues)
   resource ui2stgacc_blobsvc 'blobServices' = {
     name: 'default'
-  }
-}
-
-resource ui2stgacc_mi 'Microsoft.ManagedIdentity/userAssignedIdentities@2022-01-31-preview' = {
-  name: 'DeploymentScript2'
-  location: resourceLocation
-  tags: resourceTags
-}
-
-
-// This requires the service principal to be in 'owner' role or a custom role with 'Microsoft.Authorization/roleAssignments/write' permissions.
-// Details: https://learn.microsoft.com/en-us/answers/questions/287573/authorization-failed-when-when-writing-a-roleassig.html
-resource roleAssignment2 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  scope: ui2stgacc
-  name: guid(resourceGroup().id, ui2stgacc_mi.id, uistgacc_roledefinition.id)
-  properties: {
-    roleDefinitionId: uistgacc_roledefinition.id
-    principalId: ui2stgacc_mi.properties.principalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-resource deploymentScript2 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
-  name: 'DeploymentScript2'
-  location: resourceLocation
-  kind: 'AzurePowerShell'
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${ui2stgacc_mi.id}': {}
+    properties: {
+      staticWebsite: {
+        enabled: true
+        indexDocument: 'index.html'
+        errorDocument404Path: 'index.html'
+      }
     }
-  }
-  dependsOn: [
-    // we need to ensure we wait for the role assignment to be deployed before trying to access the storage account
-    roleAssignment
-  ]
-  properties: {
-    azPowerShellVersion: '3.0'
-    scriptContent: loadTextContent('./scripts/enable-static-website.ps1')
-    retentionInterval: 'PT4H'
-    environmentVariables: [
-      {
-        name: 'ResourceGroupName'
-        value: resourceGroup().name
-      }
-      {
-        name: 'StorageAccountName'
-        value: ui2stgacc.name
-      }
-    ]
   }
 }
 
