@@ -549,9 +549,9 @@ resource productsdbsrv 'Microsoft.Sql/servers@2022-05-01-preview' = {
     location: resourceLocation
     tags: resourceTags
     sku: {
-      capacity: 5
-      tier: 'Basic'
-      name: 'Basic'
+      capacity: 10
+      tier: 'Standard'
+      name: 'S0'
     }
   }
 
@@ -595,9 +595,9 @@ resource profilesdbsrv 'Microsoft.Sql/servers@2022-05-01-preview' = {
     location: resourceLocation
     tags: resourceTags
     sku: {
-      capacity: 5
-      tier: 'Basic'
-      name: 'Basic'
+      capacity: 10
+      tier: 'Standard'
+      name: 'S0'
     }
   }
 
@@ -1102,7 +1102,7 @@ resource acr 'Microsoft.ContainerRegistry/registries@2022-02-01-preview' = {
   location: resourceLocation
   tags: resourceTags
   sku: {
-    name: 'Basic'
+    name: 'Standard'
   }
   properties: {
     adminUserEnabled: true
