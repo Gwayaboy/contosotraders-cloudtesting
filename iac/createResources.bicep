@@ -168,6 +168,7 @@ var chaosAksSelectorId = guid('${prefixHyphenated}-chaos-aks-selector-id${suffix
 var resourceTags = {
   Product: prefixHyphenated
   Environment: suffix
+  SecurityControl: 'Ignore'
 }
 
 // resources
