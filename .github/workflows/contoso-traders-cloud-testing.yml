@@ -185,7 +185,7 @@ jobs:
       - name: purge product images cdn endpoint
         uses: azure/CLI@v1
         with:
-          inlineScript: az cdn endpoint purge --no-wait --content-paths '/*' -n '${{ env.PRODUCTS_CDN_ENDPOINT_NAME }}${{ vars.SUFFIX }}' -g '${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }}' --profile-name '${{ env.CDN_PROFILE_NAME }}${{ vars.SUFFIX }}'
+          inlineScript: az afd endpoint purge --content-paths '/*' --endpoint-name '${{ env.PRODUCTS_CDN_ENDPOINT_NAME }}${{ vars.SUFFIX }}' --profile-name '${{ env.CDN_PROFILE_NAME }}${{ vars.SUFFIX }}' --resource-group '${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }}'
       - name: extract acr password
         uses: azure/CLI@v1
         id: extract-acr-password
@@ -420,6 +420,10 @@ jobs:
         env:
           REACT_APP_BINGMAPSKEY: ${{ secrets.BINGMAPSKEY }}
         working-directory: src/ContosoTraders.Ui.Website
+      - name: enable static website on ui storage
+        uses: azure/CLI@v1
+        with:
+          inlineScript: az storage blob service-properties update --static-website --index-document index.html --404-document index.html --account-name '${{ env.UI_STORAGE_ACCOUNT_NAME }}${{ vars.SUFFIX }}' --auth-mode login
       - name: deploy ui to storage
         uses: azure/CLI@v1
         with:
@@ -427,7 +431,7 @@ jobs:
       - name: purge ui cdn endpoint
         uses: azure/CLI@v1
         with:
-          inlineScript: az cdn endpoint purge --no-wait --content-paths '/*' -n '${{ env.UI_CDN_ENDPOINT_NAME }}${{ vars.SUFFIX }}' -g '${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }}' --profile-name '${{ env.CDN_PROFILE_NAME }}${{ vars.SUFFIX }}'
+          inlineScript: az afd endpoint purge --content-paths '/*' --endpoint-name '${{ env.UI_CDN_ENDPOINT_NAME }}${{ vars.SUFFIX }}' --profile-name '${{ env.CDN_PROFILE_NAME }}${{ vars.SUFFIX }}' --resource-group '${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }}'
       - name: get ui cdn endpoint
         uses: azure/CLI@v1
         id: get-uiCdnEndpoint

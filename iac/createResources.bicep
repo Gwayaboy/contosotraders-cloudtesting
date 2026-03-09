@@ -286,7 +286,7 @@ resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
     tags: resourceTags
     properties: {
       contentType: 'endpoint url of the images cdn'
-      value: 'https://${cdnprofile_imagesendpoint.properties.hostName}'
+      value: 'https://${afd_images_endpoint.properties.hostName}'
     }
   }
 
@@ -306,7 +306,7 @@ resource kv 'Microsoft.KeyVault/vaults@2022-07-01' = {
     tags: resourceTags
     properties: {
       contentType: 'endpoint url (cdn endpoint) of the ui'
-      value: cdnprofile_ui2endpoint.properties.hostName
+      value: afd_ui2_endpoint.properties.hostName
     }
   }
 
@@ -765,18 +765,8 @@ resource uistgacc 'Microsoft.Storage/storageAccounts@2023-01-01' = {
   properties: {
     allowBlobPublicAccess: true
   }
-  // blob service with static website enabled natively (avoids ACI DeploymentScript quota issues)
-  resource uistgacc_blobsvc 'blobServices' = {
-    name: 'default'
-    properties: {
-      staticWebsite: {
-        enabled: true
-        indexDocument: 'index.html'
-        errorDocument404Path: 'index.html'
-      }
-    }
-  }
 }
+
 
 // storage account (new website)
 resource ui2stgacc 'Microsoft.Storage/storageAccounts@2023-01-01' = {
@@ -791,18 +781,8 @@ resource ui2stgacc 'Microsoft.Storage/storageAccounts@2023-01-01' = {
     allowBlobPublicAccess: true
   }
 
-  // blob service with static website enabled natively (avoids ACI DeploymentScript quota issues)
-  resource ui2stgacc_blobsvc 'blobServices' = {
-    name: 'default'
-    properties: {
-      staticWebsite: {
-        enabled: true
-        indexDocument: 'index.html'
-        errorDocument404Path: 'index.html'
-      }
-    }
-  }
 }
+
 
 //
 // image classifier
@@ -836,262 +816,159 @@ resource imageclassifierstgacc 'Microsoft.Storage/storageAccounts@2023-01-01' = 
 }
 
 //
-// cdn
+// cdn (azure front door standard)
 //
 
-resource cdnprofile 'Microsoft.Cdn/profiles@2022-11-01-preview' = {
+resource cdnprofile 'Microsoft.Cdn/profiles@2024-02-01' = {
   name: cdnProfileName
   location: 'global'
   tags: resourceTags
   sku: {
-    name: 'Standard_Microsoft'
+    name: 'Standard_AzureFrontDoor'
   }
 }
 
-// endpoint (product images)
-resource cdnprofile_imagesendpoint 'Microsoft.Cdn/profiles/endpoints@2022-11-01-preview' = {
+// origin groups
+resource afd_images_origingroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = {
+  name: 'images-origin-group'
+  parent: cdnprofile
+  properties: {
+    loadBalancingSettings: { sampleSize: 4, successfulSamplesRequired: 3, additionalLatencyInMilliseconds: 50 }
+    healthProbeSettings: { probePath: '/', probeRequestType: 'HEAD', probeProtocol: 'Https', probeIntervalInSeconds: 100 }
+  }
+}
+
+resource afd_ui_origingroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = {
+  name: 'ui-origin-group'
+  parent: cdnprofile
+  properties: {
+    loadBalancingSettings: { sampleSize: 4, successfulSamplesRequired: 3, additionalLatencyInMilliseconds: 50 }
+    healthProbeSettings: { probePath: '/', probeRequestType: 'HEAD', probeProtocol: 'Https', probeIntervalInSeconds: 100 }
+  }
+}
+
+resource afd_ui2_origingroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = {
+  name: 'ui2-origin-group'
+  parent: cdnprofile
+  properties: {
+    loadBalancingSettings: { sampleSize: 4, successfulSamplesRequired: 3, additionalLatencyInMilliseconds: 50 }
+    healthProbeSettings: { probePath: '/', probeRequestType: 'HEAD', probeProtocol: 'Https', probeIntervalInSeconds: 100 }
+  }
+}
+
+// origins
+resource afd_images_origin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = {
+  name: 'images-origin'
+  parent: afd_images_origingroup
+  properties: {
+    hostName: replace(replace(productimagesstgacc.properties.primaryEndpoints.blob, 'https://', ''), '/', '')
+    httpPort: 80
+    httpsPort: 443
+    originHostHeader: replace(replace(productimagesstgacc.properties.primaryEndpoints.blob, 'https://', ''), '/', '')
+    priority: 1
+    weight: 1000
+    enabledState: 'Enabled'
+  }
+}
+
+resource afd_ui_origin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = {
+  name: 'ui-origin'
+  parent: afd_ui_origingroup
+  properties: {
+    hostName: replace(replace(uistgacc.properties.primaryEndpoints.web, 'https://', ''), '/', '')
+    httpPort: 80
+    httpsPort: 443
+    originHostHeader: replace(replace(uistgacc.properties.primaryEndpoints.web, 'https://', ''), '/', '')
+    priority: 1
+    weight: 1000
+    enabledState: 'Enabled'
+  }
+}
+
+resource afd_ui2_origin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = {
+  name: 'ui2-origin'
+  parent: afd_ui2_origingroup
+  properties: {
+    hostName: replace(replace(ui2stgacc.properties.primaryEndpoints.web, 'https://', ''), '/', '')
+    httpPort: 80
+    httpsPort: 443
+    originHostHeader: replace(replace(ui2stgacc.properties.primaryEndpoints.web, 'https://', ''), '/', '')
+    priority: 1
+    weight: 1000
+    enabledState: 'Enabled'
+  }
+}
+
+// endpoints
+resource afd_images_endpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = {
   name: cdnImagesEndpointName
   location: 'global'
   tags: resourceTags
   parent: cdnprofile
-  properties: {
-    isCompressionEnabled: true
-    contentTypesToCompress: [
-      'image/svg+xml'
-    ]
-    deliveryPolicy: {
-      rules: [
-        {
-          name: 'Global'
-          order: 0
-          actions: [
-            {
-              name: 'CacheExpiration'
-              parameters: {
-                typeName: 'DeliveryRuleCacheExpirationActionParameters'
-                cacheBehavior: 'SetIfMissing'
-                cacheType: 'All'
-                cacheDuration: '10:00:00'
-              }
-            }
-          ]
-        }
-      ]
-    }
-    originHostHeader: replace(replace(productimagesstgacc.properties.primaryEndpoints.blob, 'https://', ''), '/', '')
-    origins: [
-      {
-        name: replace(
-          replace(replace(productimagesstgacc.properties.primaryEndpoints.blob, 'https://', ''), '/', ''),
-          '.',
-          '-'
-        )
-        properties: {
-          hostName: replace(replace(productimagesstgacc.properties.primaryEndpoints.blob, 'https://', ''), '/', '')
-          originHostHeader: replace(
-            replace(productimagesstgacc.properties.primaryEndpoints.blob, 'https://', ''),
-            '/',
-            ''
-          )
-        }
-      }
-    ]
-  }
+  properties: { enabledState: 'Enabled' }
 }
 
-// endpoint (ui / old website)
-resource cdnprofile_uiendpoint 'Microsoft.Cdn/profiles/endpoints@2022-11-01-preview' = {
+resource afd_ui_endpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = {
   name: cdnUiEndpointName
   location: 'global'
   tags: resourceTags
   parent: cdnprofile
-  properties: {
-    isCompressionEnabled: true
-    contentTypesToCompress: [
-      'application/eot'
-      'application/font'
-      'application/font-sfnt'
-      'application/javascript'
-      'application/json'
-      'application/opentype'
-      'application/otf'
-      'application/pkcs7-mime'
-      'application/truetype'
-      'application/ttf'
-      'application/vnd.ms-fontobject'
-      'application/xhtml+xml'
-      'application/xml'
-      'application/xml+rss'
-      'application/x-font-opentype'
-      'application/x-font-truetype'
-      'application/x-font-ttf'
-      'application/x-httpd-cgi'
-      'application/x-javascript'
-      'application/x-mpegurl'
-      'application/x-opentype'
-      'application/x-otf'
-      'application/x-perl'
-      'application/x-ttf'
-      'font/eot'
-      'font/ttf'
-      'font/otf'
-      'font/opentype'
-      'image/svg+xml'
-      'text/css'
-      'text/csv'
-      'text/html'
-      'text/javascript'
-      'text/js'
-      'text/plain'
-      'text/richtext'
-      'text/tab-separated-values'
-      'text/xml'
-      'text/x-script'
-      'text/x-component'
-      'text/x-java-source'
-    ]
-    deliveryPolicy: {
-      rules: [
-        {
-          name: 'Global'
-          order: 0
-          actions: [
-            {
-              name: 'CacheExpiration'
-              parameters: {
-                typeName: 'DeliveryRuleCacheExpirationActionParameters'
-                cacheBehavior: 'SetIfMissing'
-                cacheType: 'All'
-                cacheDuration: '10:00:00'
-              }
-            }
-          ]
-        }
-      ]
-    }
-    originHostHeader: replace(replace(uistgacc.properties.primaryEndpoints.web, 'https://', ''), '/', '')
-    origins: [
-      {
-        name: replace(replace(replace(uistgacc.properties.primaryEndpoints.web, 'https://', ''), '/', ''), '.', '-')
-        properties: {
-          hostName: replace(replace(uistgacc.properties.primaryEndpoints.web, 'https://', ''), '/', '')
-          originHostHeader: replace(replace(uistgacc.properties.primaryEndpoints.web, 'https://', ''), '/', '')
-        }
-      }
-    ]
-  }
+  properties: { enabledState: 'Enabled' }
 }
 
-// endpoint (ui / new website)
-resource cdnprofile_ui2endpoint 'Microsoft.Cdn/profiles/endpoints@2022-11-01-preview' = {
+resource afd_ui2_endpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = {
   name: cdnUi2EndpointName
   location: 'global'
   tags: resourceTags
   parent: cdnprofile
-  properties: {
-    isCompressionEnabled: true
-    contentTypesToCompress: [
-      'application/eot'
-      'application/font'
-      'application/font-sfnt'
-      'application/javascript'
-      'application/json'
-      'application/opentype'
-      'application/otf'
-      'application/pkcs7-mime'
-      'application/truetype'
-      'application/ttf'
-      'application/vnd.ms-fontobject'
-      'application/xhtml+xml'
-      'application/xml'
-      'application/xml+rss'
-      'application/x-font-opentype'
-      'application/x-font-truetype'
-      'application/x-font-ttf'
-      'application/x-httpd-cgi'
-      'application/x-javascript'
-      'application/x-mpegurl'
-      'application/x-opentype'
-      'application/x-otf'
-      'application/x-perl'
-      'application/x-ttf'
-      'font/eot'
-      'font/ttf'
-      'font/otf'
-      'font/opentype'
-      'image/svg+xml'
-      'text/css'
-      'text/csv'
-      'text/html'
-      'text/javascript'
-      'text/js'
-      'text/plain'
-      'text/richtext'
-      'text/tab-separated-values'
-      'text/xml'
-      'text/x-script'
-      'text/x-component'
-      'text/x-java-source'
-    ]
-    deliveryPolicy: {
-      rules: [
-        {
-          name: 'Global'
-          order: 0
-          actions: [
-            {
-              name: 'CacheExpiration'
-              parameters: {
-                typeName: 'DeliveryRuleCacheExpirationActionParameters'
-                cacheBehavior: 'SetIfMissing'
-                cacheType: 'All'
-                cacheDuration: '02:00:00'
-              }
-            }
-          ]
-        }
-        {
-          name: 'EnforceHttps'
-          order: 1
-          conditions: [
-            {
-              name: 'RequestScheme'
-              parameters: {
-                typeName: 'DeliveryRuleRequestSchemeConditionParameters'
-                matchValues: [
-                  'HTTP'
-                ]
-                operator: 'Equal'
-                negateCondition: false
-                transforms: []
-              }
-            }
-          ]
-          actions: [
-            {
-              name: 'UrlRedirect'
-              parameters: {
-                typeName: 'DeliveryRuleUrlRedirectActionParameters'
-                redirectType: 'Found'
-                destinationProtocol: 'Https'
-              }
-            }
-          ]
-        }
-      ]
-    }
-    originHostHeader: replace(replace(ui2stgacc.properties.primaryEndpoints.web, 'https://', ''), '/', '')
-    origins: [
-      {
-        name: replace(replace(replace(ui2stgacc.properties.primaryEndpoints.web, 'https://', ''), '/', ''), '.', '-')
-        properties: {
-          hostName: replace(replace(ui2stgacc.properties.primaryEndpoints.web, 'https://', ''), '/', '')
-          originHostHeader: replace(replace(ui2stgacc.properties.primaryEndpoints.web, 'https://', ''), '/', '')
-        }
-      }
-    ]
-  }
+  properties: { enabledState: 'Enabled' }
 }
+
+// routes
+resource afd_images_route 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = {
+  name: 'images-route'
+  parent: afd_images_endpoint
+  properties: {
+    originGroup: { id: afd_images_origingroup.id }
+    supportedProtocols: ['Https', 'Http']
+    patternsToMatch: ['/*']
+    forwardingProtocol: 'HttpsOnly'
+    linkToDefaultDomain: 'Enabled'
+    httpsRedirect: 'Enabled'
+  }
+  dependsOn: [afd_images_origin]
+}
+
+resource afd_ui_route 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = {
+  name: 'ui-route'
+  parent: afd_ui_endpoint
+  properties: {
+    originGroup: { id: afd_ui_origingroup.id }
+    supportedProtocols: ['Https', 'Http']
+    patternsToMatch: ['/*']
+    forwardingProtocol: 'HttpsOnly'
+    linkToDefaultDomain: 'Enabled'
+    httpsRedirect: 'Enabled'
+  }
+  dependsOn: [afd_ui_origin]
+}
+
+resource afd_ui2_route 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = {
+  name: 'ui2-route'
+  parent: afd_ui2_endpoint
+  properties: {
+    originGroup: { id: afd_ui2_origingroup.id }
+    supportedProtocols: ['Https', 'Http']
+    patternsToMatch: ['/*']
+    forwardingProtocol: 'HttpsOnly'
+    linkToDefaultDomain: 'Enabled'
+    httpsRedirect: 'Enabled'
+  }
+  dependsOn: [afd_ui2_origin]
+}
+
+
+
 
 //
 // container registry
@@ -1187,7 +1064,7 @@ resource dashboard 'Microsoft.Portal/dashboards@2020-09-01-preview' = {
 // aks cluster
 //
 
-resource aks 'Microsoft.ContainerService/managedClusters@2022-10-02-preview' = {
+resource aks 'Microsoft.ContainerService/managedClusters@2024-10-01' = {
   name: aksClusterName
   location: resourceLocation
   tags: resourceTags
@@ -1661,4 +1538,4 @@ resource chaosaksexperiment 'Microsoft.Chaos/experiments@2022-10-01-preview' = {
 ////////////////////////////////////////////////////////////////////////////////
 
 output cartsApiEndpoint string = 'https://${cartsapiaca.properties.configuration.ingress.fqdn}'
-output uiCdnEndpoint string = 'https://${cdnprofile_ui2endpoint.properties.hostName}'
+output uiCdnEndpoint string = 'https://${afd_ui2_endpoint.properties.hostName}'
