@@ -184,6 +184,8 @@ jobs:
             RG="${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }}"
             SUB=$(az account show --query 'id' -o tsv)
             az role assignment create --assignee-object-id "$SP_OID" --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope "/subscriptions/$SUB/resourceGroups/$RG" --only-show-errors 2>/dev/null || true
+            echo "Waiting 90s for RBAC to propagate..."
+            sleep 90
       - name: seed product image (product details)
         uses: azure/CLI@v1
         with:
