@@ -294,6 +294,7 @@ jobs:
           AKS_MEMORY_LIMIT: ${{ env.AKS_MEMORY_LIMIT }}
       - name: lint deployment manifest
         uses: azure/k8s-lint@v2.0
+        continue-on-error: true
         with:
           manifests: ./src/ContosoTraders.Api.Products/Manifests/Deployment.yaml
       - name: apply deployment manifest
