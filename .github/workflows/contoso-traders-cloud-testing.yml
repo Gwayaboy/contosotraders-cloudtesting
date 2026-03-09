@@ -176,6 +176,14 @@ jobs:
         with:
           connection-string: Server=tcp:${{ env.PRODUCTS_DB_SERVER_NAME }}${{ vars.SUFFIX }}.database.windows.net,1433;Initial Catalog=${{ env.PRODUCTS_DB_NAME }};Persist Security Info=False;User ID=${{ env.PRODUCTS_DB_USER_NAME }};Password=${{ secrets.SQLPASSWORD }};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;
           path: ./src/ContosoTraders.Api.Products/Migration/productsdb.sql
+      - name: assign storage blob data contributor to sp
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            SP_OID=$(az ad sp show --id $(az account show --query 'user.name' -o tsv) --query 'id' -o tsv)
+            RG="${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }}"
+            SUB=$(az account show --query 'id' -o tsv)
+            az role assignment create --assignee-object-id "$SP_OID" --assignee-principal-type ServicePrincipal --role "Storage Blob Data Contributor" --scope "/subscriptions/$SUB/resourceGroups/$RG" --only-show-errors 2>/dev/null || true
       - name: seed product image (product details)
         uses: azure/CLI@v1
         with:
