@@ -18,7 +18,7 @@ This repo contains the source code, deployment templates, and demo scripts for e
 
 Access the live demo at: **[https://contoso-traders-ui2ct325c-cjddh8g4evg7esgv.z03.azurefd.net/](https://contoso-traders-ui2ct325c-cjddh8g4evg7esgv.z03.azurefd.net/)**
 
-> **Note for Candidates**: You can explore the deployed application and run all tests against this live site directly. Feel free to ignore the deployment instructions unless you want to deploy the application to a different subscription.
+> **Note for Participants**: You can explore the deployed application and run all tests against this live site directly. Feel free to ignore the deployment instructions unless you want to deploy the application to a different subscription.
 
 ## Continuous Integration
 
