@@ -23,7 +23,13 @@ Use these endpoints for testing and guided lab exercises:
 | Service | URL | Description |
 |---------|-----|-------------|
 | **UI (Main App)** | [https://contoso-traders-ui2ct325c-cjddh8g4evg7esgv.z03.azurefd.net/](https://contoso-traders-ui2ct325c-cjddh8g4evg7esgv.z03.azurefd.net/) | Main e-commerce application UI |
+| **Carts API** | [https://contoso-traders-cartsct325c.orangepond-c37622c6.westeurope.azurecontainerapps.io/swagger/index.html](https://contoso-traders-cartsct325c.orangepond-c37622c6.westeurope.azurecontainerapps.io/swagger/index.html) | Shopping cart API with Swagger UI (Azure Container Apps) |
 | **Products API** | [https://contoso-traders-productsct325c.westeurope.cloudapp.azure.com/swagger/index.html](https://contoso-traders-productsct325c.westeurope.cloudapp.azure.com/swagger/index.html) | Products catalog API with Swagger UI (AKS) |
+
+#### API Base URLs (for testing tools)
+
+- **Carts API Base**: `https://contoso-traders-cartsct325c.orangepond-c37622c6.westeurope.azurecontainerapps.io/v1`
+- **Products API Base**: `https://contoso-traders-productsct325c.westeurope.cloudapp.azure.com/v1`
 
 > **Note for Participants**: You can explore the deployed application and run all tests against these live endpoints directly. Feel free to ignore the deployment instructions unless you want to deploy the application to a different subscription.
 

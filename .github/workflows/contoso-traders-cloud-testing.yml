@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: ["main"]
-    paths-ignore: ["docs/**", "demo-scripts/**"]
+    paths-ignore: ["docs/**", "demo-scripts/**", "README.md"]
 
 env:
   ACR_NAME: contosotradersacr
