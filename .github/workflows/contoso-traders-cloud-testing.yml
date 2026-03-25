@@ -43,7 +43,46 @@ env:
   USER_ASSIGNED_MANAGED_IDENTITY_NAME: contoso-traders-mi-kv-access
 
 jobs:
+  # Detect changes to determine if provisioning is needed
+  # - Always provision on manual workflow_dispatch
+  # - Provision if IaC files (iac/**) or workflow changed
+  # - Skip provisioning if only source code changed (saves 30-40 minutes)
+  detect-changes:
+    runs-on: ubuntu-22.04
+    outputs:
+      iac: ${{ steps.filter.outputs.iac }}
+      src: ${{ steps.filter.outputs.src }}
+      should-provision: ${{ steps.check.outputs.should-provision }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            iac:
+              - 'iac/**'
+              - '.github/workflows/contoso-traders-cloud-testing.yml'
+            src:
+              - 'src/**'
+      - name: Check if provisioning is needed
+        id: check
+        run: |
+          # Always provision on manual workflow dispatch
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "should-provision=true" >> $GITHUB_OUTPUT
+            echo "🚀 Manual workflow dispatch - will provision"
+          # Provision if IaC changed
+          elif [ "${{ steps.filter.outputs.iac }}" == "true" ]; then
+            echo "should-provision=true" >> $GITHUB_OUTPUT
+            echo "🏗️ IaC changes detected - will provision"
+          else
+            echo "should-provision=false" >> $GITHUB_OUTPUT
+            echo "⏭️ No IaC changes - will skip provisioning"
+          fi
+
   provision:
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.should-provision == 'true'
     runs-on: ubuntu-22.04
     env:
       AADUSERNAME: ${{ secrets.AADUSERNAME }}
@@ -482,7 +521,8 @@ jobs:
           inlineScript: echo UI CDN endpoint accessible at https://$(az keyvault secret show --vault-name ${{ env.KV_NAME }}${{ vars.SUFFIX }} --name uiCdnEndpoint --query value -o tsv)
 
   load-tests-with-chaos-products-api:
-    needs: [provision, playwright-tests-ui]
+    needs: [detect-changes, provision, playwright-tests-ui]
+    if: needs.detect-changes.outputs.should-provision == 'true'
     runs-on: ubuntu-22.04
     concurrency:
       group: load-tests-with-chaos-products-api
@@ -542,8 +582,8 @@ jobs:
             ]
 
   load-tests-carts-internal-api:
-    if: ${{ vars.DEPLOYPRIVATEENDPOINTS == 'true' }}
-    needs: [provision, playwright-tests-ui]
+    needs: [detect-changes, provision, playwright-tests-ui]
+    if: needs.detect-changes.outputs.should-provision == 'true' && vars.DEPLOYPRIVATEENDPOINTS == 'true'
     runs-on: ubuntu-22.04
     concurrency:
       group: load-tests-carts-internal-api
@@ -609,7 +649,8 @@ jobs:
             ]
 
   load-tests-carts-api:
-    needs: [provision, playwright-tests-ui]
+    needs: [detect-changes, provision, playwright-tests-ui]
+    if: needs.detect-changes.outputs.should-provision == 'true'
     runs-on: ubuntu-22.04
     concurrency:
       group: load-tests-carts-api
@@ -657,7 +698,8 @@ jobs:
             ]
 
   playwright-tests-ui:
-    needs: [provision]
+    needs: [detect-changes, provision]
+    if: needs.detect-changes.outputs.should-provision == 'true'
     timeout-minutes: 20
     runs-on: ubuntu-22.04
     container:
