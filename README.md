@@ -12,6 +12,14 @@ This repo contains the source code, deployment templates, and demo scripts for e
 * Application Links: [UI](https://cloudtesting.contosotraders.com/) | [Carts API](https://contoso-traders-cartsctprd.bluestone-748d2276.eastus.azurecontainerapps.io/swagger/index.html) | [Products API](https://contoso-traders-productsctprd.eastus.cloudapp.azure.com/swagger/index.html)
 * [Deployment Instructions](./docs/deployment-instructions.md) | [Running Locally](./docs/running-locally.md)
 
+## 🌐 Live Demo
+
+**The application is already deployed and ready to use!**
+
+Access the live demo at: **[https://contoso-traders-ui2ct325c-cjddh8g4evg7esgv.z03.azurefd.net/](https://contoso-traders-ui2ct325c-cjddh8g4evg7esgv.z03.azurefd.net/)**
+
+> **Note for Candidates**: You can explore the deployed application and run all tests against this live site directly. Feel free to ignore the deployment instructions unless you want to deploy the application to a different subscription.
+
 ## Continuous Integration
 
 | Pipeline                                                                     | Status                                                                                                                                                                                                                                                                               | Details                                                        |
