@@ -209,6 +209,13 @@ jobs:
             az vmss identity assign \
               --identities $(az identity show -g ${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }} --name ${{ env.USER_ASSIGNED_MANAGED_IDENTITY_NAME }}${{ vars.SUFFIX }} --query "id" -o tsv) \
               --ids $(az vmss list -g ${{ env.AKS_NODES_RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }} --query "[0].id" -o tsv) \
+      # Grant kubelet identity access to Key Vault for pod authentication
+      - name: grant kubelet identity kv access
+        uses: azure/CLI@v1
+        with:
+          inlineScript: |
+            KUBELET_IDENTITY_OID=$(az aks show --resource-group ${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }} --name ${{ env.AKS_CLUSTER_NAME }}${{ vars.SUFFIX }} --query "identityProfile.kubeletidentity.objectId" -o tsv)
+            az keyvault set-policy -n ${{ env.KV_NAME }}${{ vars.SUFFIX }} -g ${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }} --secret-permissions get list --object-id $KUBELET_IDENTITY_OID
       # Seed the DBs and storage accounts
       - name: seed products db
         uses: azure/sql-action@v2.2
@@ -325,7 +332,7 @@ jobs:
         uses: azure/CLI@v1
         id: get-managedIdentityClientId
         with:
-          inlineScript: echo "managedIdentityClientId"="$(az identity show -g ${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }} --name ${{ env.USER_ASSIGNED_MANAGED_IDENTITY_NAME }}${{ vars.SUFFIX }} --query "clientId" -o tsv)" >> $GITHUB_OUTPUT
+          inlineScript: echo "managedIdentityClientId"="$(az aks show --resource-group ${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }} --name ${{ env.AKS_CLUSTER_NAME }}${{ vars.SUFFIX }} --query "identityProfile.kubeletidentity.clientId" -o tsv)" >> $GITHUB_OUTPUT
       - name: create kubernetes secret (kv endpoint)
         uses: Azure/k8s-create-secret@v4
         with:
