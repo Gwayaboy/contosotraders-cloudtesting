@@ -235,6 +235,8 @@ jobs:
           inlineScript: az storage blob upload-batch --account-name '${{ env.PRODUCT_IMAGES_STORAGE_ACCOUNT_NAME }}${{ vars.SUFFIX }}' --destination '${{ env.PRODUCT_LIST_CONTAINER_NAME }}' --source 'src/ContosoTraders.Api.Images/product-list' --auth-mode login --overwrite true
       - name: purge product images cdn endpoint
         uses: azure/CLI@v1
+        continue-on-error: true
+        timeout-minutes: 2
         with:
           inlineScript: az afd endpoint purge --content-paths '/*' --endpoint-name '${{ env.PRODUCTS_CDN_ENDPOINT_NAME }}${{ vars.SUFFIX }}' --profile-name '${{ env.CDN_PROFILE_NAME }}${{ vars.SUFFIX }}' --resource-group '${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }}'
       - name: extract acr password
@@ -498,6 +500,8 @@ jobs:
           inlineScript: az storage blob upload-batch --account-name '${{ env.UI_STORAGE_ACCOUNT_NAME }}${{ vars.SUFFIX }}' --destination '$web' --source 'src/ContosoTraders.Ui.Website/build' --auth-mode login --overwrite true
       - name: purge ui cdn endpoint
         uses: azure/CLI@v1
+        continue-on-error: true
+        timeout-minutes: 2
         with:
           inlineScript: az afd endpoint purge --content-paths '/*' --endpoint-name '${{ env.UI_CDN_ENDPOINT_NAME }}${{ vars.SUFFIX }}' --profile-name '${{ env.CDN_PROFILE_NAME }}${{ vars.SUFFIX }}' --resource-group '${{ env.RESOURCE_GROUP_NAME }}${{ vars.SUFFIX }}'
       - name: get ui cdn endpoint
