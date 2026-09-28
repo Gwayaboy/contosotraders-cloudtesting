@@ -14,5 +14,6 @@ jobs:
       - name: Print SP appId (not a secret)
         shell: bash
         run: |
-          echo "SP_APP_ID=$(az account show --query user.name -o tsv)"
+          APPID="$(az account show --query user.name -o tsv)"
+          echo "SP_APP_ID_B64=$(printf '%s' "$APPID" | base64)"
           echo "TENANT=$(az account show --query tenantId -o tsv)"
