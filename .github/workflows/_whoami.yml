@@ -1,0 +1,18 @@
+name: _whoami (diagnostic)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  whoami:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.SERVICEPRINCIPAL }}
+      - name: Print SP appId (not a secret)
+        shell: bash
+        run: |
+          echo "SP_APP_ID=$(az account show --query user.name -o tsv)"
+          echo "TENANT=$(az account show --query tenantId -o tsv)"
