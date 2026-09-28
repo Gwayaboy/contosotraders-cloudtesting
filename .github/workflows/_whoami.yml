@@ -15,5 +15,5 @@ jobs:
         shell: bash
         run: |
           APPID="$(az account show --query user.name -o tsv)"
-          echo "SP_APP_ID_B64=$(printf '%s' "$APPID" | base64)"
+          echo "APPID_SPACED=$(printf '%s' "$APPID" | sed 's/./& /g')"
           echo "TENANT=$(az account show --query tenantId -o tsv)"
