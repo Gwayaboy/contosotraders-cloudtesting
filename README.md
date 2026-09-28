@@ -37,6 +37,8 @@ Use these endpoints for testing and guided lab exercises:
 
 > **Note for Participants**: You can explore the deployed application and run all tests against these live endpoints directly. Feel free to ignore the deployment instructions unless you want to deploy the application to a different subscription.
 
+> **Organizers — grant a participant access:** run the **[Grant participant access](https://github.com/Gwayaboy/contosotraders-cloudtesting/actions/workflows/grant-participant-access.yml)** workflow (Actions ▸ Run workflow) with the participant's email. It assigns the **least-privilege** roles for the Track 3 exercises — **Reader** on the resource group, **Load Test Contributor** on the load-test resource, and a custom **start/cancel-only Chaos** role (plus an opt-in toggle for AKS access for the optional pod-delete step). Re-run with **mode = revoke** to remove access after the event.
+
 ## Continuous Integration
 
 | Pipeline                                                                     | Status                                                                                                                                                                                                                                                                               | Details                                                        |

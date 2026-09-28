@@ -1,0 +1,171 @@
+name: Grant participant access (Track 3 — Contoso Traders)
+
+# Manually grant a TfL AI-Assisted Testing Hack Day participant the LEAST-PRIVILEGE
+# access needed to complete the optional Track 3 cloud-testing exercises
+# (Azure Load Testing + Azure Chaos Studio) against the deployed Contoso Traders
+# environment. Run it from the Actions tab (Run workflow).
+#
+# Roles granted (grant mode):
+#   * Reader                          — resource group  (navigate resources, view metrics & App Insights)
+#   * Load Test Contributor           — the Load Testing resource only  (create & run load tests)
+#   * Chaos Experiment Operator       — resource group  (custom role: read/start/cancel experiments only)
+#   * Azure Kubernetes Service        — AKS cluster only  (OPTIONAL, only if grantAksPodAccess=true —
+#     Cluster User Role                 for the optional "delete pod" chaos step)
+#
+# Re-run with mode = revoke to remove the access after the event.
+
+on:
+  workflow_dispatch:
+    inputs:
+      participantEmail:
+        description: "Participant email (TfL corporate or personal). Invited as an Entra guest if not already present."
+        required: true
+        type: string
+      participantObjectId:
+        description: "Optional: the participant's Entra object (principal) ID. Provide it to skip the directory lookup/invite (works even if the service principal has no Microsoft Graph permissions)."
+        required: false
+        type: string
+      mode:
+        description: "grant (default) or revoke"
+        required: true
+        default: "grant"
+        type: choice
+        options:
+          - grant
+          - revoke
+      grantAksPodAccess:
+        description: "Also grant AKS kubectl access for the OPTIONAL 'delete pod' chaos step. Leave false for the minimal set."
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+env:
+  SUBSCRIPTION_ID: f452ba43-0d5c-4233-a26b-2c0b02cd2dd8
+  RG: contoso-traders-rgct26
+  LOADTEST_NAME: contoso-traders-loadtestct26
+  AKS_NAME: contoso-traders-aksct26
+  CHAOS_ROLE_NAME: "Chaos Experiment Operator (Contoso Traders)"
+
+jobs:
+  access:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Azure login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.SERVICEPRINCIPAL }}
+
+      - name: Grant or revoke least-privilege Track 3 access
+        shell: bash
+        env:
+          EMAIL: ${{ github.event.inputs.participantEmail }}
+          OBJECT_ID_IN: ${{ github.event.inputs.participantObjectId }}
+          MODE: ${{ github.event.inputs.mode }}
+          GRANT_AKS: ${{ github.event.inputs.grantAksPodAccess }}
+        run: |
+          set -euo pipefail
+          SUB="$SUBSCRIPTION_ID"
+          RG_SCOPE="/subscriptions/$SUB/resourceGroups/$RG"
+
+          echo "::group::Resolve participant"
+          OID="${OBJECT_ID_IN:-}"
+          if [ -n "$OID" ]; then
+            echo "Using supplied object id: $OID"
+          else
+            OID="$(az ad user list --filter "mail eq '$EMAIL' or otherMails/any(m:m eq '$EMAIL')" --query '[0].id' -o tsv 2>/dev/null || true)"
+            if [ -z "$OID" ]; then
+              UPN_PREFIX="$(printf '%s' "$EMAIL" | sed 's/@/_/')%23EXT%23"
+              OID="$(az ad user list --filter "startswith(userPrincipalName,'$UPN_PREFIX')" --query '[0].id' -o tsv 2>/dev/null || true)"
+            fi
+            if [ -z "$OID" ]; then
+              if [ "$MODE" = "revoke" ]; then
+                echo "User $EMAIL not found; nothing to revoke."
+                exit 0
+              fi
+              echo "Not found — inviting $EMAIL as an Entra B2B guest…"
+              OID="$(az rest --method POST --uri 'https://graph.microsoft.com/v1.0/invitations' \
+                --headers 'Content-Type=application/json' \
+                --body "{\"invitedUserEmailAddress\":\"$EMAIL\",\"inviteRedirectUrl\":\"https://portal.azure.com\",\"sendInvitationMessage\":true}" \
+                --query 'invitedUser.id' -o tsv 2>/dev/null || true)"
+              if [ -z "$OID" ]; then
+                echo "::error::Could not find or invite '$EMAIL'. The deploy service principal likely lacks Microsoft Graph 'User.Invite.All'/'User.Read.All'. Either (a) invite the guest once in Entra ID (Users → Invite external user) and re-run, or (b) re-run this workflow passing 'participantObjectId'."
+                exit 1
+              fi
+              echo "Invited. Waiting ~30s for directory replication…"
+              sleep 30
+            fi
+          fi
+          echo "Participant object id: $OID"
+          echo "::endgroup::"
+
+          LT_ID="$(az resource show -g "$RG" -n "$LOADTEST_NAME" --resource-type 'Microsoft.LoadTestService/loadTests' --query id -o tsv)"
+          AKS_ID="$(az resource show -g "$RG" -n "$AKS_NAME" --resource-type 'Microsoft.ContainerService/managedClusters' --query id -o tsv)"
+
+          if [ "$MODE" = "grant" ]; then
+            echo "::group::Ensure custom role '$CHAOS_ROLE_NAME' (read/start/cancel only)"
+            if [ -z "$(az role definition list --name "$CHAOS_ROLE_NAME" --query '[0].roleName' -o tsv 2>/dev/null || true)" ]; then
+              jq -n --arg n "$CHAOS_ROLE_NAME" --arg s "$RG_SCOPE" '{
+                Name: $n,
+                IsCustom: true,
+                Description: "Read, start and cancel Azure Chaos Studio experiments only (no write/delete). Contoso Traders Track 3.",
+                Actions: [
+                  "Microsoft.Chaos/experiments/read",
+                  "Microsoft.Chaos/experiments/start/action",
+                  "Microsoft.Chaos/experiments/cancel/action",
+                  "Microsoft.Chaos/experiments/executions/read",
+                  "Microsoft.Chaos/experiments/executions/getExecutionDetails/action"
+                ],
+                AssignableScopes: [ $s ]
+              }' > chaos-role.json
+              az role definition create --role-definition chaos-role.json
+              echo "Created; waiting ~30s for propagation…"
+              sleep 30
+            else
+              echo "Already exists."
+            fi
+            echo "::endgroup::"
+          fi
+
+          # role|scope pairs
+          ROLES=(
+            "Reader|$RG_SCOPE"
+            "Load Test Contributor|$LT_ID"
+            "$CHAOS_ROLE_NAME|$RG_SCOPE"
+          )
+          if [ "$GRANT_AKS" = "true" ]; then
+            ROLES+=("Azure Kubernetes Service Cluster User Role|$AKS_ID")
+          fi
+
+          for entry in "${ROLES[@]}"; do
+            ROLE="${entry%%|*}"
+            SCOPE="${entry##*|}"
+            if [ "$MODE" = "grant" ]; then
+              echo "Granting '$ROLE'"
+              ok=""
+              for i in 1 2 3 4 5; do
+                if az role assignment create --assignee-object-id "$OID" --assignee-principal-type User --role "$ROLE" --scope "$SCOPE" >/dev/null 2>&1; then
+                  ok="yes"; echo "  ok"; break
+                fi
+                echo "  not ready, retry $i…"; sleep 15
+              done
+              [ -z "$ok" ] && { echo "::error::Failed to assign '$ROLE' to $OID"; exit 1; }
+            else
+              echo "Revoking '$ROLE'"
+              az role assignment delete --assignee "$OID" --role "$ROLE" --scope "$SCOPE" >/dev/null 2>&1 || echo "  (nothing to remove)"
+            fi
+          done
+
+          echo ""
+          if [ "$MODE" = "grant" ]; then
+            echo "✅ Granted least-privilege Track 3 access to $EMAIL"
+            echo "   • Reader — resource group $RG"
+            echo "   • Load Test Contributor — $LOADTEST_NAME"
+            echo "   • $CHAOS_ROLE_NAME — the two Chaos experiments only"
+            [ "$GRANT_AKS" = "true" ] && echo "   • Azure Kubernetes Service Cluster User Role — $AKS_NAME (optional pod-delete step)"
+            echo "   → Ask the participant to accept the emailed invitation, then sign in at https://portal.azure.com"
+          else
+            echo "✅ Revoked Track 3 access for $EMAIL"
+          fi
