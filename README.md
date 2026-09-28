@@ -9,7 +9,7 @@ This repo contains the source code, deployment templates, and demo scripts for e
 
 ## Documentation and Resources
 
-* Application Links: [UI](https://contoso-traders-ui2ct325c-cjddh8g4evg7esgv.z03.azurefd.net/) | [Products API](https://contoso-traders-productsct325c.westeurope.cloudapp.azure.com/swagger/index.html)
+* Application Links: [UI](https://contoso-traders-ui2ct26-budwfddfdjfbc7db.z03.azurefd.net/) | [Products API](https://contoso-traders-productsct26.swedencentral.cloudapp.azure.com/swagger/index.html)
 * [Deployment Instructions](./docs/deployment-instructions.md) | [Running Locally](./docs/running-locally.md)
 
 ## 🌐 Live Demo
@@ -22,14 +22,17 @@ Use these endpoints for testing and guided lab exercises:
 
 | Service | URL | Description |
 |---------|-----|-------------|
-| **UI (Main App)** | [https://contoso-traders-ui2ct325c-cjddh8g4evg7esgv.z03.azurefd.net/](https://contoso-traders-ui2ct325c-cjddh8g4evg7esgv.z03.azurefd.net/) | Main e-commerce application UI |
-| **Carts API** | [https://contoso-traders-cartsct325c.orangepond-c37622c6.westeurope.azurecontainerapps.io/swagger/index.html](https://contoso-traders-cartsct325c.orangepond-c37622c6.westeurope.azurecontainerapps.io/swagger/index.html) | Shopping cart API with Swagger UI (Azure Container Apps) |
-| **Products API** | [https://contoso-traders-productsct325c.westeurope.cloudapp.azure.com/swagger/index.html](https://contoso-traders-productsct325c.westeurope.cloudapp.azure.com/swagger/index.html) | Products catalog API with Swagger UI (AKS) |
+| **UI (Main App)** | [https://contoso-traders-ui2ct26-budwfddfdjfbc7db.z03.azurefd.net/](https://contoso-traders-ui2ct26-budwfddfdjfbc7db.z03.azurefd.net/) | Main e-commerce application UI |
+| **Carts API** | [https://contoso-traders-cartsct26.happyrock-fb72c3f0.swedencentral.azurecontainerapps.io/swagger/index.html](https://contoso-traders-cartsct26.happyrock-fb72c3f0.swedencentral.azurecontainerapps.io/swagger/index.html) | Shopping cart API with Swagger UI (Azure Container Apps) |
+| **Products API** | [https://contoso-traders-productsct26.swedencentral.cloudapp.azure.com/swagger/index.html](https://contoso-traders-productsct26.swedencentral.cloudapp.azure.com/swagger/index.html) | Products catalog API with Swagger UI (AKS) |
 
 #### API Base URLs (for testing tools)
 
-- **Carts API Base**: `https://contoso-traders-cartsct325c.orangepond-c37622c6.westeurope.azurecontainerapps.io/v1`
-- **Products API Base**: `https://contoso-traders-productsct325c.westeurope.cloudapp.azure.com/v1`
+- **Carts API Base**: `https://contoso-traders-cartsct26.happyrock-fb72c3f0.swedencentral.azurecontainerapps.io/v1`
+- **Products API Base**: `https://contoso-traders-productsct26.swedencentral.cloudapp.azure.com/v1`
+
+> **🎯 Doing the TfL AI-Assisted Testing Hack Day (optional Track 3)?** Follow the focused guide:
+> **[HACKDAY.md](./HACKDAY.md)** — Azure Load Testing & Chaos Studio against this live environment.
 
 > **Note for Participants**: You can explore the deployed application and run all tests against these live endpoints directly. Feel free to ignore the deployment instructions unless you want to deploy the application to a different subscription.
 
