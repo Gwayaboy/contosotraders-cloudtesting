@@ -31,8 +31,9 @@ Use these endpoints for testing and guided lab exercises:
 - **Carts API Base**: `https://contoso-traders-cartsct26.happyrock-fb72c3f0.swedencentral.azurecontainerapps.io/v1`
 - **Products API Base**: `https://contoso-traders-productsct26.swedencentral.cloudapp.azure.com/v1`
 
-> **🎯 Doing the TfL AI-Assisted Testing Hack Day (optional Track 3)?** Follow the focused guide:
-> **[HACKDAY.md](./HACKDAY.md)** — Azure Load Testing & Chaos Studio against this live environment.
+> **🎯 Doing the TfL AI-Assisted Testing Hack Day?** This app is the cloud target for the optional
+> **Track 3 — Azure Load Testing & Chaos Studio**. Full hack-day guide & instructions:
+> **[TfL AI-Assisted Testing Hack Day → Track 3](https://github.com/Gwayaboy/tfl-ai-assisted-testing-hackday/blob/main/track-3-performance-optional/README.md)**.
 
 > **Note for Participants**: You can explore the deployed application and run all tests against these live endpoints directly. Feel free to ignore the deployment instructions unless you want to deploy the application to a different subscription.
 
