@@ -616,20 +616,17 @@ resource profilesdbsrv 'Microsoft.Sql/servers@2022-05-01-preview' = {
 //
 
 // aca environment
-resource cartsapiacaenv 'Microsoft.App/managedEnvironments@2022-06-01-preview' = {
+resource cartsapiacaenv 'Microsoft.App/managedEnvironments@2024-03-01' = {
   name: cartsApiAcaEnvName
   location: resourceLocation
   tags: resourceTags
-  sku: {
-    name: 'Consumption'
-  }
   properties: {
     zoneRedundant: false
   }
 }
 
 // aca
-resource cartsapiaca 'Microsoft.App/containerApps@2022-06-01-preview' = {
+resource cartsapiaca 'Microsoft.App/containerApps@2024-03-01' = {
   name: cartsApiAcaName
   location: resourceLocation
   tags: resourceTags
@@ -1311,14 +1308,11 @@ module privateDnsZone './createPrivateDnsZone.bicep' =
   }
 
 // aca environment (internal)
-resource cartsinternalapiacaenv 'Microsoft.App/managedEnvironments@2022-06-01-preview' =
+resource cartsinternalapiacaenv 'Microsoft.App/managedEnvironments@2024-03-01' =
   if (deployPrivateEndpoints) {
     name: cartsInternalApiAcaEnvName
     location: resourceLocation
     tags: resourceTags
-    sku: {
-      name: 'Consumption'
-    }
     properties: {
       zoneRedundant: false
       vnetConfiguration: {
@@ -1329,7 +1323,7 @@ resource cartsinternalapiacaenv 'Microsoft.App/managedEnvironments@2022-06-01-pr
   }
 
 // aca (internal)
-resource cartsinternalapiaca 'Microsoft.App/containerApps@2022-06-01-preview' =
+resource cartsinternalapiaca 'Microsoft.App/containerApps@2024-03-01' =
   if (deployPrivateEndpoints) {
     name: cartsInternalApiAcaName
     location: resourceLocation
@@ -1416,7 +1410,7 @@ resource cartsinternalapiaca 'Microsoft.App/containerApps@2022-06-01-preview' =
 //
 
 // target: kv
-resource chaoskvtarget 'Microsoft.Chaos/targets@2022-10-01-preview' = {
+resource chaoskvtarget 'Microsoft.Chaos/targets@2024-01-01' = {
   name: 'Microsoft-KeyVault'
   location: resourceLocation
   scope: kv
@@ -1429,7 +1423,7 @@ resource chaoskvtarget 'Microsoft.Chaos/targets@2022-10-01-preview' = {
 }
 
 // chaos experiment: kv
-resource chaoskvexperiment 'Microsoft.Chaos/experiments@2022-10-01-preview' = {
+resource chaoskvexperiment 'Microsoft.Chaos/experiments@2024-01-01' = {
   name: chaosKvExperimentName
   location: resourceLocation
   tags: resourceTags
@@ -1449,7 +1443,6 @@ resource chaoskvexperiment 'Microsoft.Chaos/experiments@2022-10-01-preview' = {
         ]
       }
     ]
-    startOnCreation: false
     steps: [
       {
         name: 'step1'
@@ -1473,7 +1466,7 @@ resource chaoskvexperiment 'Microsoft.Chaos/experiments@2022-10-01-preview' = {
 }
 
 // target: aks
-resource chaosakstarget 'Microsoft.Chaos/targets@2022-10-01-preview' = {
+resource chaosakstarget 'Microsoft.Chaos/targets@2024-01-01' = {
   name: 'Microsoft-AzureKubernetesServiceChaosMesh'
   location: resourceLocation
   scope: aks
@@ -1486,7 +1479,7 @@ resource chaosakstarget 'Microsoft.Chaos/targets@2022-10-01-preview' = {
 }
 
 // chaos experiment: aks (chaos mesh)
-resource chaosaksexperiment 'Microsoft.Chaos/experiments@2022-10-01-preview' = {
+resource chaosaksexperiment 'Microsoft.Chaos/experiments@2024-01-01' = {
   name: chaosAksExperimentName
   location: resourceLocation
   tags: resourceTags
@@ -1506,7 +1499,6 @@ resource chaosaksexperiment 'Microsoft.Chaos/experiments@2022-10-01-preview' = {
         ]
       }
     ]
-    startOnCreation: false
     steps: [
       {
         name: 'step1'
