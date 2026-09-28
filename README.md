@@ -1,6 +1,6 @@
 # Contoso Traders - Cloud testing tools demo app
 
-The Contoso Traders app is a sample application showcasing [Playwright](https://playwright.dev), [Azure Load Testing](https://aka.ms/malt-docs), [Azure Chaos Studio](https://aka.ms/CHAOS-docs) and more.
+The Contoso Traders app is a sample application showcasing [Azure Load Testing](https://aka.ms/malt-docs) and [Azure Chaos Studio](https://aka.ms/CHAOS-docs).
 
 This repo contains the source code, deployment templates, and demo scripts for exploring these cloud testing tools.
 
@@ -45,8 +45,6 @@ Use these endpoints for testing and guided lab exercises:
 
 ## Guided Labs Scripts
 
-* [Developer Workflow](./demo-scripts/dev-workflow/walkthrough.md)
-
 * Azure Load Testing - Generate high-scale load and identify performance bottlenecks.
   * [Create a load test for the shopping cart API.](./demo-scripts/azure-load-testing/walkthrough.md)
   * [Use GitHub Actions for regression testing.](./demo-scripts/azure-load-testing/walkthrough.md#walkthrough-regression-testing-with-github-workflows)
@@ -56,9 +54,6 @@ Use these endpoints for testing and guided lab exercises:
 * Azure Chaos Studio - Improve application resilience by introducing faults and simulating outages.
   * [Create an experiment using Key Vault Deny Access fault to test the products API (AKS).](./demo-scripts/azure-chaos-studio/walkthrough.md)
   * [Run experiment in GitHub Actions to inject faults (pod failures) into the AKS cluster.](./demo-scripts/azure-chaos-studio/walkthrough.md#walkthrough-running-chaos-experiments-via-github-workflows)
-
-* Playwright - Reliable end-to-end testing for modern web apps.
-  * [Use the VS Code extension to explore and run web tests](./demo-scripts/testing-with-playwright/walkthrough.md) for [API testing](src/ContosoTraders.Ui.Website/tests/api), [Authentication](src/ContosoTraders.Ui.Website/tests/auth.setup.ts), [Shopping cart](src/ContosoTraders.Ui.Website/tests/cart.spec.ts), [Uploading files](src/ContosoTraders.Ui.Website/tests/fileupload.spec.ts), [Visual Comparisons](src/ContosoTraders.Ui.Website/tests/pages.spec.ts#L63), [Emulation](src/ContosoTraders.Ui.Website/tests/map.spec.ts), [Mocking](src/ContosoTraders.Ui.Website/tests/mocks.spec.ts), and [using a CSV for data](src/ContosoTraders.Ui.Website/tests/account.ts)
 
 ## Architecture
 

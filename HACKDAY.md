@@ -9,8 +9,8 @@ Apps, a **Products API** on AKS, plus Cosmos DB, Azure SQL and Key Vault. It's t
 target for the performance/resilience part of the day: the local movies app is great for *learning*
 JMeter, but this is where you drive **real distributed load** and **inject faults**.
 
-> This guide is deliberately scoped to **Load Testing and Chaos Studio only**. For the other
-> Contoso Traders demos (Developer Workflow, Playwright) see the [main README](./README.md).
+> This guide is deliberately scoped to **Load Testing and Chaos Studio only** — the two cloud
+> exercises for the hack day.
 
 ## Live environment (region: swedencentral)
 
