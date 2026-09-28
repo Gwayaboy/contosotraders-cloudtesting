@@ -86,12 +86,19 @@ jobs:
                 exit 0
               fi
               echo "Not found — inviting $EMAIL as an Entra B2B guest…"
-              OID="$(az rest --method POST --uri 'https://graph.microsoft.com/v1.0/invitations' \
-                --headers 'Content-Type=application/json' \
-                --body "{\"invitedUserEmailAddress\":\"$EMAIL\",\"inviteRedirectUrl\":\"https://portal.azure.com\",\"sendInvitationMessage\":true}" \
-                --query 'invitedUser.id' -o tsv 2>/dev/null || true)"
+              printf '{"invitedUserEmailAddress":"%s","inviteRedirectUrl":"https://portal.azure.com","sendInvitationMessage":true}' "$EMAIL" > invite.json
+              # Retry: a freshly-granted User.Invite.All app permission can take a few minutes to
+              # appear in the SP's token, so retry the invite with backoff before giving up.
+              for attempt in 1 2 3 4 5 6; do
+                INVITE_OUT="$(az rest --method POST --uri 'https://graph.microsoft.com/v1.0/invitations' \
+                  --headers 'Content-Type=application/json' --body @invite.json -o json 2>invite.err || true)"
+                OID="$(printf '%s' "$INVITE_OUT" | jq -r '.invitedUser.id // empty' 2>/dev/null || true)"
+                if [ -n "$OID" ]; then echo "Invited (attempt $attempt)."; break; fi
+                echo "  invite attempt $attempt failed; Graph said:"; sed 's/^/    /' invite.err || true
+                sleep 40
+              done
               if [ -z "$OID" ]; then
-                echo "::error::Could not find or invite '$EMAIL'. The deploy service principal likely lacks Microsoft Graph 'User.Invite.All'/'User.Read.All'. Either (a) invite the guest once in Entra ID (Users → Invite external user) and re-run, or (b) re-run this workflow passing 'participantObjectId'."
+                echo "::error::Could not invite '$EMAIL' after retries (see Graph error above). If it is a permissions error, the deploy service principal needs Microsoft Graph 'User.Invite.All' (admin-consented). Otherwise re-run passing 'participantObjectId', or invite the guest once in Entra ID (Users → Invite external user)."
                 exit 1
               fi
               echo "Invited. Waiting ~30s for directory replication…"
